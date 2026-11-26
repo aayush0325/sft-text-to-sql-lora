@@ -8,14 +8,17 @@ padding-free batches, fused AdamW, and no activation checkpointing.
 ## Results
 
 **[RESULTS.md](RESULTS.md)** has the full comparison table, metric explanations,
-artifact inventory and reproduction steps. The best config was `mlp_r32`
-(84.4% SQL execution accuracy vs 50% for the base model).
+artifact inventory and reproduction steps. In the rigorous 2,000-row paired
+eval, `mlp_r32` was nominally best (78.3% SQL execution accuracy vs 53.9% for
+the base model) but statistically tied with the other larger adapters; see the
+[paired comparison table](results/runs/large_eval/comparison.md) for Wilson CIs,
+McNemar tests and bootstrap differences.
 
 Training loss curves: [results/runs/loss_curves.png](results/runs/loss_curves.png)
 (generated from `results/runs/*/history.json`).
 
-All adapters and eval outputs were downloaded into `results/runs/`; that
-directory is gitignored but present locally. The best adapter (`mlp_r32`) is
+Reports, curves and per-row eval predictions are tracked in `results/runs/`;
+only the adapter binaries are gitignored. The best adapter (`mlp_r32`) is
 published on Hugging Face as
 [`aayush0325/llama-3.2-1b-text2sql-lora-r32`](https://huggingface.co/aayush0325/llama-3.2-1b-text2sql-lora-r32).
 
@@ -27,7 +30,9 @@ published on Hugging Face as
 - `src/sft/report.py` — comparison tables (`results.csv`, `results.md`) and `loss_curves.png`.
 - `configs/train.yaml`, `configs/lora.yaml` — all sweep settings (no CLI flags needed).
 - `modal_app.py` — data prep (CPU), a 2-step smoke test, and the train + eval + report function (L4).
-- `data/eval_set.jsonl` — 32 hand-curated rows used for the SQLite execution eval.
+- `data/eval_set.jsonl` — 32 hand-curated rows from the original SQLite eval.
+- `data/eval_set_2000.jsonl` — deterministic 2,000-row paired eval set (`scripts/make_eval_set.py`).
+- `scripts/compare_eval.py` — Wilson CIs, paired McNemar tests and bootstrap differences.
 
 ## Reproduce
 

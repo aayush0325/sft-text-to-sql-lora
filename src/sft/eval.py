@@ -68,6 +68,7 @@ def evaluate_model(
     system_prompt: str,
     max_new_tokens: int,
     batch_size: int,
+    details_path: str | Path | None = None,
 ) -> dict[str, Any]:
     gold_results = [execute_sql(row["sql"], row["sql_context"]) for row in rows]
     usable = [(row, gold) for row, gold in zip(rows, gold_results, strict=True) if gold is not None]
@@ -81,6 +82,7 @@ def evaluate_model(
         for row, _ in usable
     ]
     valid = correct = 0
+    details: list[dict[str, Any]] = []
     model.eval()
     for start in range(0, len(prompts), batch_size):
         encoded = tokenizer(
@@ -102,13 +104,27 @@ def evaluate_model(
         for (row, gold), completion in zip(
             usable[start : start + batch_size], completions, strict=True
         ):
-            result = execute_sql(clean_generation(completion), row["sql_context"])
-            if result is None:
-                continue
-            valid += 1
-            correct += int(result == gold)
+            generated = clean_generation(completion)
+            result = execute_sql(generated, row["sql_context"])
+            is_valid = result is not None
+            is_correct = int(is_valid and result == gold)
+            valid += int(is_valid)
+            correct += is_correct
+            details.append(
+                {
+                    "id": row.get("id"),
+                    "valid": is_valid,
+                    "correct": bool(is_correct),
+                    "generated_sql": generated,
+                }
+            )
 
     total = len(usable)
+    if details_path is not None:
+        Path(details_path).write_text(
+            json.dumps({"rows": total, "details": details}, ensure_ascii=False, indent=1) + "\n",
+            encoding="utf-8",
+        )
     return {
         "execution_accuracy": correct / total,
         "valid_sql_rate": valid / total,
@@ -116,10 +132,21 @@ def evaluate_model(
     }
 
 
-def run_eval(train_config: str | Path, lora_config: str | Path) -> dict[str, Any]:
+def run_eval(
+    train_config: str | Path,
+    lora_config: str | Path,
+    *,
+    dataset_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+    details_dir: str | Path | None = None,
+    max_new_tokens: int | None = None,
+    batch_size: int | None = None,
+) -> dict[str, Any]:
     cfg = TrainConfig.from_yaml(train_config)
     specs = load_lora_specs(lora_config)
-    rows = load_eval_rows(cfg.eval_dataset_path)
+    rows = load_eval_rows(dataset_path if dataset_path is not None else cfg.eval_dataset_path)
+    max_new_tokens = cfg.eval_max_new_tokens if max_new_tokens is None else max_new_tokens
+    batch_size = cfg.eval_batch_size if batch_size is None else batch_size
     print(f"SQLite eval on {len(rows)} examples")
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.model_id, trust_remote_code=cfg.trust_remote_code)
@@ -133,6 +160,14 @@ def run_eval(train_config: str | Path, lora_config: str | Path) -> dict[str, Any
         "float32": torch.float32,
     }.get(cfg.dtype, torch.float32 if device == "cpu" else torch.float16)
 
+    if details_dir is not None:
+        Path(details_dir).mkdir(parents=True, exist_ok=True)
+
+    def details_path(name: str) -> str | Path | None:
+        if details_dir is None:
+            return None
+        return Path(details_dir) / f"{name}.json"
+
     def load_base() -> Any:
         return AutoModelForCausalLM.from_pretrained(
             cfg.model_id,
@@ -144,7 +179,7 @@ def run_eval(train_config: str | Path, lora_config: str | Path) -> dict[str, Any
     print("\n=== base model ===")
     model = load_base()
     results["base"] = evaluate_model(
-        model, tokenizer, rows, cfg.system_prompt, cfg.eval_max_new_tokens, cfg.eval_batch_size
+        model, tokenizer, rows, cfg.system_prompt, max_new_tokens, batch_size, details_path("base")
     )
     print(json.dumps(results["base"], indent=2))
     del model
@@ -160,13 +195,13 @@ def run_eval(train_config: str | Path, lora_config: str | Path) -> dict[str, Any
         base = load_base()
         adapted = PeftModel.from_pretrained(base, str(adapter_dir)).to(device)
         results[spec.name] = evaluate_model(
-            adapted, tokenizer, rows, cfg.system_prompt, cfg.eval_max_new_tokens, cfg.eval_batch_size
+            adapted, tokenizer, rows, cfg.system_prompt, max_new_tokens, batch_size, details_path(spec.name)
         )
         print(json.dumps(results[spec.name], indent=2))
         del adapted, base
         torch.cuda.empty_cache()
 
-    output = Path(cfg.output_dir) / "sqlite_eval.json"
+    output = Path(output_path) if output_path is not None else Path(cfg.output_dir) / "sqlite_eval.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     print(f"\nWrote {output}")

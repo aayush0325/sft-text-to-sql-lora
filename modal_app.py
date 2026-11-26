@@ -92,6 +92,32 @@ def train_eval_report() -> dict[str, object]:
     }
 
 
+@app.function(image=image, gpu=GPU, cpu=8, volumes={"/cache": volume}, timeout=86400)
+def eval_only() -> dict[str, object]:
+    """Paired SQLite eval of the base model + all adapters on 2,000 test rows."""
+    import yaml
+    from pathlib import Path
+
+    from sft.eval import run_eval
+
+    cfg = yaml.safe_load(Path(TRAIN_CONFIG).read_text())
+    cfg["eval"].update(
+        dataset_path="/root/data/eval_set_2000.jsonl",
+        max_new_tokens=128,
+        batch_size=16,
+    )
+    train_yaml = Path("/tmp/eval_2000.yaml")
+    train_yaml.write_text(yaml.safe_dump(cfg))
+    results = run_eval(
+        train_yaml,
+        LORA_CONFIG,
+        output_path="/cache/runs/sqlite_eval_2000.json",
+        details_dir="/cache/runs/eval_details_2000",
+    )
+    volume.commit()
+    return {"results": results, "dataset": "/root/data/eval_set_2000.jsonl"}
+
+
 @app.local_entrypoint()
 def main() -> None:
     print("Dataset:", prepare_data.remote())

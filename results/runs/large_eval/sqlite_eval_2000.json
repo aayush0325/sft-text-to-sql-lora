@@ -1,0 +1,32 @@
+{
+  "base": {
+    "execution_accuracy": 0.539039039039039,
+    "valid_sql_rate": 0.8668668668668669,
+    "rows": 1998
+  },
+  "attn_r8": {
+    "execution_accuracy": 0.7497497497497497,
+    "valid_sql_rate": 0.9294294294294294,
+    "rows": 1998
+  },
+  "attn_mlp_r16": {
+    "execution_accuracy": 0.7767767767767768,
+    "valid_sql_rate": 0.9464464464464465,
+    "rows": 1998
+  },
+  "mlp_r32": {
+    "execution_accuracy": 0.7832832832832833,
+    "valid_sql_rate": 0.9564564564564565,
+    "rows": 1998
+  },
+  "attn_r64_rslora": {
+    "execution_accuracy": 0.7757757757757757,
+    "valid_sql_rate": 0.950950950950951,
+    "rows": 1998
+  },
+  "all_linear_r16_dora": {
+    "execution_accuracy": 0.7807807807807807,
+    "valid_sql_rate": 0.9524524524524525,
+    "rows": 1998
+  }
+}
