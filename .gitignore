@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Keep eval reports, tables, loss curves and histories in git, but exclude
+# the large adapter weights and the session export.
+results/runs/*/adapter/
+results/runs/best_adapter/
+pi-session-*.html

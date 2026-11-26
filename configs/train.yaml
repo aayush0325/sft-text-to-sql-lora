@@ -1,0 +1,53 @@
+model:
+  # Public mirror of Llama-3.2-1B-Instruct; no gated Meta license needed.
+  id: unsloth/Llama-3.2-1B-Instruct
+  dtype: bfloat16  # L4 (Ada) has native BF16 support
+  trust_remote_code: false
+
+data:
+  # Created by: hf download gretelai/synthetic_text_to_sql --repo-type dataset --local-dir /cache/data
+  # Set to null to fetch from the Hub on each run.
+  data_dir: /cache/data
+  cache_dir: null
+  train_split: train
+  eval_split: test
+  train_limit: null        # e.g. 5000 for a smoke test
+  eval_limit: 500
+  num_proc: 4
+
+prompt:
+  system: "You are a SQL expert. Given a database schema and a question, respond with a single valid SQL query and nothing else."
+  max_length: 1024
+
+training:
+  output_dir: /cache/runs
+  seed: 42
+  num_train_epochs: 1
+  max_steps: -1            # -1 means use epochs
+  per_device_train_batch_size: 8      # L4 has 24 GB; no checkpointing needed
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 2      # keep the effective batch size at 16
+  gradient_checkpointing: false       # ~30% faster than recomputing activations
+  bf16: true
+  fp16: false
+  tf32: true                          # faster matmuls on Ada/Ampere hardware
+  attn_implementation: sdpa           # dispatches to FlashAttention kernels
+  padding_free: true                  # no wasted padded tokens
+  optim: adamw_torch_fused            # fused optimizer step
+  dataloader_num_workers: 0            # forking workers after CUDA init deadlocks
+  logging_steps: 20
+  report_to: "none"
+
+optimizer:
+  learning_rate: 0.0002
+  weight_decay: 0.01
+  betas: [0.9, 0.95]
+  eps: 1e-8
+  warmup_ratio: 0.03       # linear warmup for 3% of steps
+  scheduler: cosine        # then cosine decay to zero
+  max_grad_norm: 1.0
+
+eval:
+  dataset_path: /root/data/eval_set.jsonl
+  max_new_tokens: 256
+  batch_size: 8

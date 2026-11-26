@@ -1,0 +1,28 @@
+[project]
+name = "sft"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Aayush Khanna", email = "ayush25khanna@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "accelerate>=1.16.0",
+    "bitsandbytes>=0.50.2",
+    "datasets>=5.2.0",
+    "matplotlib>=3.11.2",
+    "peft>=0.22.0",
+    "pyyaml>=6.0.4",
+    "torch>=2.15.0",
+    "transformers>=5.24.1",
+    "trl>=1.18.2",
+]
+
+[project.scripts]
+sft = "sft:main"
+sft-eval = "sft.eval:main"
+
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14.0"]
+build-backend = "uv_build"

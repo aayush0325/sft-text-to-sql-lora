@@ -1,0 +1,6 @@
+{
+  "name": "mlp_r32",
+  "eval_loss": 0.18901336193084717,
+  "trainable_params": 15728640,
+  "adapter_dir": "/cache/runs/best_adapter"
+}

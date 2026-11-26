@@ -1,0 +1,32 @@
+[
+  {
+    "name": "attn_r8",
+    "eval_loss": 0.21806082129478455,
+    "trainable_params": 1703936,
+    "adapter_dir": "/cache/runs/attn_r8/adapter"
+  },
+  {
+    "name": "attn_mlp_r16",
+    "eval_loss": 0.19188541173934937,
+    "trainable_params": 11272192,
+    "adapter_dir": "/cache/runs/attn_mlp_r16/adapter"
+  },
+  {
+    "name": "mlp_r32",
+    "eval_loss": 0.18901336193084717,
+    "trainable_params": 15728640,
+    "adapter_dir": "/cache/runs/mlp_r32/adapter"
+  },
+  {
+    "name": "attn_r64_rslora",
+    "eval_loss": 0.19437171518802643,
+    "trainable_params": 13631488,
+    "adapter_dir": "/cache/runs/attn_r64_rslora/adapter"
+  },
+  {
+    "name": "all_linear_r16_dora",
+    "eval_loss": 0.1915498673915863,
+    "trainable_params": 11649024,
+    "adapter_dir": "/cache/runs/all_linear_r16_dora/adapter"
+  }
+]

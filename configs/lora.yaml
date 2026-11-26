@@ -1,0 +1,35 @@
+# Each entry produces one fine-tuning run. Results are ranked by the metric in
+# train.yaml -> evaluation.selection_metric.
+
+loras:
+  - name: attn_r8
+    r: 8
+    lora_alpha: 16
+    lora_dropout: 0.05
+    target_modules: [q_proj, k_proj, v_proj, o_proj]
+
+  - name: attn_mlp_r16
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+  - name: mlp_r32
+    r: 32
+    lora_alpha: 64
+    lora_dropout: 0.10
+    target_modules: [gate_proj, up_proj, down_proj]
+
+  - name: attn_r64_rslora
+    r: 64
+    lora_alpha: 32
+    lora_dropout: 0.05
+    target_modules: [q_proj, k_proj, v_proj, o_proj]
+    use_rslora: true
+
+  - name: all_linear_r16_dora
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+    use_dora: true
